@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 ## Ejercicio 1
@@ -36,7 +37,40 @@ mean(ingresos)
 sqrt(var(ingresos))
 median(ingresos)
 
-nucleo <- density(ingresos)
-plot(nucleo)
+ggplot() + 
+  geom_histogram(aes(x = ingresos, y = ..density..), bins = 100, fill='lightblue', color='black') +
+  geom_density(aes(x = ingresos), kernel = 'gaussian', color='blue') +
+  geom_density(aes(x = ingresos), kernel = 'epanechnikov', color='blue') +
+  geom_density(aes(x = ingresos), kernel = 'triangular', color='blue') +
+  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=3, color='green') +
+  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=1, color='orange') +
+  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=0.1, color='black') +
+  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=0.01, color='red')
 
 ```
+
+Podemos ver cómo el cambio de núcleo apenas modifica el resultado final del estimador. Además, comprobamos que el cambio en el parámetro bw (la desviación típica del kernel) sí afecta en gran medida a la aproximación. 
+
+Por otro lado, el conjunto de datos estudiado es bimodal. Con las desviaciones típicas por defecto (o manualmente = 0.1) podemos comprobar que nuestro estimador cumple esta condición. Con desviaciones típicas demasiado grandes esta propiedad se pierde, siendo unimodal. En el caso de un valor demasiado bajo las gran varianza hace que sea multimodal.
+
+## Ejercicio 7
+
+Sea $F_n$ la función de distribución empírica correspondiente a una muestra $X_1,\dots,X_n$ y sea $X_1^*,\dots,X_n^*$ una remuestra extraída de $F_n$. Se calcula un estimador del núcleo $\hat{f}^*_h(x)$ a partir de $X_1^*,\dots,X_n^*$ y otro $\hat{f}_h(x) a partir de $X_1,\dots,X_n$. Demuestra que
+$$
+E_{F_n}\left[ \hat{f}^*_h(x) - \hat{f}_h(x) \right] = 0
+$$
+¿Qué implica este resultado sobre el uso del bootstrap para estimar el sesgo de los estimadores del núcleo?
+
+### Solución
+
+$$
+E_{F_n}\left[\hat{f}_h^*(x) - \hat{f}_h(x) \right] = E_{F_n}\left[\hat{f}_h^*(x)\right] - E_{F_n}\left[\hat{f}_h(x) \right] = \\
+=  E_{F_n}\left[ \frac{1}{nh}\sum^n_{i=1}K\left( \frac{x-X^*_i}{h}\right)\right] - 
+E_{F_n}\left[ \frac{1}{nh}\sum^n_{i=1}K\left( \frac{x-X_i}{h}\right)\right] = \\
+\text{Dado que la esperanza de una media es la esperanza de cada valor independiente}\\
+\text{y dado que }X_i^*\text{ es igual a }X_j\text{ para un j adecuado}\\
+=  E_{F_n}\left[ \frac{1}{h}K\left( \frac{x-X^*_i}{h}\right)\right] - 
+E_{F_n}\left[ \frac{1}{h}K\left( \frac{x-X_j}{h}\right)\right] = 0\\
+$$
+
+Esto nos quiere decir que el estimador del núcleo mediante bootstrap tiene el mismo sesgo que el estimador del núcleo obtenido de la muestra original.
