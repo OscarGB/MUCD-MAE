@@ -1,0 +1,42 @@
+---
+title: "practica2"
+author: "Óscar Gómez Borzdynski"
+date: "1/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Ejercicio 1
+
+Sea $X^∗$ una v.a. cuya función de densidad es un estimador del núcleo con parámetro de suavizado $h$ y núcleo gaussiano. Calcula la esperanza y la varianza de $X^∗$.
+
+### Solución
+
+$$ E[X^*] = \int x^* \hat f (x^*) dx^* = \int x^* \frac{1}{nh} \sum^n_{i=1}K\left(\frac{x^*-x_i}{h}\right)dx^* = \\
+= \frac{1}{n} \sum^n_{i=1} \int x^* \frac{1}{h} K\left(\frac{x^*-x_i}{h}\right)dx^* = \left(u = \frac{x^* - x_i}{h}, x^* = hu + x_i\right) \\
+ = \frac{1}{n} \sum^n_{i=1} \int (hu + x_i)K(u)du = \frac{1}{n}\sum^n_{i=1}x_i\int K(u)du = \bar{X}$$
+ 
+ $$ Var[X^*] = E[(X^*)^2] - E[X^*]^2 = -\bar{X}^2 + \int (x^*)^2 \hat{f}(x^*) dx^* = \\
+  = -\bar{X}^2 +\frac{1}{n} \sum^n_{i=1} \int (hu + x_i)^2K(u)du = -\bar{X}^2 + \frac{1}{n} \sum^n_{i=1} \int (h^2u^2 + x_i^2 + 2hux_i)K(u)du = \\
+  = -\bar{X}^2 + \frac{1}{n}\sum_{i=1}^{n} \left( h^2 \int u^2K(u)du +  x_i^2\right) = -\bar{X}^2  + h^2 + \bar{X^2} = Var_n(X) + h^2
+ $$
+ 
+## Ejercicio 2
+
+Realiza un análisis descriptivo de los datos británicos de ingresos familiares en 1975 (reescalados dividiendo por la media) contenidos en el fichero Datos-ingresos.txt. En concreto, calcula su media, mediana y desviación típica, y un estimador del núcleo de la función de densidad. Comenta los resultados.
+
+### Solución
+
+```{r}
+ingresos <- read.table('Datos-ingresos.txt')$V1
+mean(ingresos)
+sqrt(var(ingresos))
+median(ingresos)
+
+nucleo <- density(ingresos)
+plot(nucleo)
+
+```

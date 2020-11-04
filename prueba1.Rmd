@@ -1,0 +1,203 @@
+---
+title: "Ejercicios Bootstrap"
+author: "Óscar Gómez Borzdynski"
+date: "18/10/2020"
+output: html_document
+---
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Ejercicio 1
+
+Se extrae una remuestra bootstrap de una muestra de $n$ observaciones $X_1, \dots , X_n$. Calcula la probabilidad de que una observación prefijada, $x_j$, no aparezca en la muestra bootstrap. Calcula el límite de esta probabilidad si $n\rightarrow\infty$.
+
+### Solución
+
+Sea $X^* = x_1^*, \dots x_n^*$ un remuestreo obtenido por bootstrap
+$$P(x_j \notin X^*) = P(x_j\neq x_1^*)P(x_j\neq x_2^*)\cdots P(x_j\neq x_n^*)$$
+$$P(x_j\neq x_k^*) = 1- P(x_j = x_k^*) = 1 - \frac{1}{n} = \frac{n-1}{n}$$
+$$P(x_j \notin X^*) = \left(\frac{n-1}{n} \right)^n, n\rightarrow \infty = e^{-1}$$
+
+## Ejercicio 2
+
+Dada una muestra de n datos diferentes, calcula en función de $n$ el número de remuestras bootstrap distintas que es posible obtener. Aplica la expresión obtenida al caso $n = 15$. ¿Qué implicación práctica tiene el resultado?
+
+### Solución
+
+Para obtener el número total de remuestras posibles vemos que podemos expresarlo como una muestra no ordeada con reemplazamiento de tamaño $n$ obtenida de un conjunto de tamaño $n$.
+
+Por tanto tenemos ${n+n-1\choose n} = {2n-1\choose n}$ posibilidades.
+
+Para $n=15$ tenemos ${29 \choose 15} = 77.558.760$ posibilidades diferentes. Tener una cantidad de remuestras diferentes tan grande implica que cada vez que tomemos una nueva remuestra, la probabilidad de que sea diferente de la anterior es muy baja, por lo que podemos considerarlas muestras independientes de la misma población.
+
+## Ejercicio 3
+
+Consideremos la siguiente muestra de tamaño $n = 10$:
+$$1 \quad 2 \quad 3.5 \quad 4 \quad 7 \quad 7.3 \quad 8.6 \quad 12.4 \quad 13.8 \quad 18.1$$
+Sea $\hat\theta$ la media recortada al $40 \%$ que se obtiene al eliminar los dos mayores y los dos menores
+datos y calcular el promedio de los 6 datos restantes. Sea $\hat\sigma_R$ el estimador bootstrap de la
+desviación típica de $\hat\theta$ basado en R remuestras. Calcula $\hat\sigma_R$ para $R = 10, 100, 1000, 2000$ y
+usando $10$ conjuntos independientes de $R$ remuestras. ¿A qué valor parecen converger los
+valores obtenidos? ¿Qué número de remuestras te parece suficiente?
+
+### Solución
+
+```{r}
+muestra_original <- c(1,2,3.5,4,7,7.3,8.6,12.4,13.8,18.1)
+n <- 10
+
+mediaRecortada40 <- function(v){
+  mean(sort(v)[3:8])
+}
+
+media_original <- mediaRecortada40(muestra_original)
+
+#for (R in c(10,100,1000,2000)){
+R <- 10
+muestras_bootstrap <- sample(muestra_original, 10*n*R, rep = TRUE)
+muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+
+medias_bootstrap <- apply(muestras_bootstrap, 2, mediaRecortada40)
+
+df <- data.frame(medias_bootstrap = medias_bootstrap)
+  
+ggplot(df) +
+    geom_histogram(aes(x = medias_bootstrap, y = ..density..),
+                   bins = 10, fill = 'olivedrab4', col = 'black') +
+    geom_vline(xintercept = media_original, size = 1.1)
+```
+
+Para $R=10$ obtenemos una desviación típica del estimador de `r sd(medias_bootstrap)`
+
+```{r, echo=FALSE}
+R <- 100
+muestras_bootstrap <- sample(muestra_original, 10*n*R, rep = TRUE)
+muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+
+medias_bootstrap <- apply(muestras_bootstrap, 2, mediaRecortada40)
+
+df <- data.frame(medias_bootstrap = medias_bootstrap)
+  
+ggplot(df) +
+    geom_histogram(aes(x = medias_bootstrap, y = ..density..),
+                   bins = 10, fill = 'olivedrab4', col = 'black') +
+    geom_vline(xintercept = media_original, size = 1.1)
+```
+
+Para $R=100$ obtenemos una desviación típica del estimador de `r sd(medias_bootstrap)`
+
+```{r, echo=FALSE}
+R <- 1000
+muestras_bootstrap <- sample(muestra_original, 10*n*R, rep = TRUE)
+muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+
+medias_bootstrap <- apply(muestras_bootstrap, 2, mediaRecortada40)
+
+df <- data.frame(medias_bootstrap = medias_bootstrap)
+  
+ggplot(df) +
+    geom_histogram(aes(x = medias_bootstrap, y = ..density..),
+                   bins = 10, fill = 'olivedrab4', col = 'black') +
+    geom_vline(xintercept = media_original, size = 1.1)
+```
+
+Para $R=1000$ obtenemos una desviación típica del estimador de `r sd(medias_bootstrap)`
+
+```{r, echo=FALSE}
+R <- 2000
+muestras_bootstrap <- sample(muestra_original, 10*n*R, rep = TRUE)
+muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+
+medias_bootstrap <- apply(muestras_bootstrap, 2, mediaRecortada40)
+
+df <- data.frame(medias_bootstrap = medias_bootstrap)
+  
+ggplot(df) +
+    geom_histogram(aes(x = medias_bootstrap, y = ..density..),
+                   bins = 10, fill = 'olivedrab4', col = 'black') +
+    geom_vline(xintercept = media_original, size = 1.1)
+```
+
+Para $R=2000$ obtenemos una desviación típica del estimador de `r sd(medias_bootstrap)`
+
+Viendo los resultados anteriores parece que $\hat\sigma_R \quad R\rightarrow \infty = 2.05$ y viendo los histogramas anteriores parece razonable decir que con $R=100$ se obtiene una distribución más similar a la normal que con $R=10$, por lo que considero que es un número suficiente de remuestreos.
+
+## Ejercicio 4
+
+Sea $S^2$ la varianza muestral de una muestra de vaiid $X_1 \dots X_n$ de una distribución con
+varianza σ^2.
+
+(a) Para la muestra del problema anterior se tiene $S^2 \sim 30,84$. Usa bootstrap para determinar el error típico de este estimador de $σ^2$.
+
+(b) Compara el resultado con el error típico que darías si, por ejemplo, supieras que los datos proceden de una distribución normal.
+
+(c) Calcula un intervalo de confianza para $σ^2$ usando el método bootstrap híbrido. Fija $1 − \alpha = 0,95$.
+
+### Solución
+
+(a) Realizamos el bootstrap con 1000 remuestras
+
+```{r}
+R <- 1000
+muestras_bootstrap <- sample(muestra_original, n*R, rep = TRUE)
+muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+
+varianzas_bootstrap <- apply(muestras_bootstrap, 2, var)
+varianza_original = var(muestra_original)
+
+df <- data.frame(varianzas_bootstrap = varianzas_bootstrap)
+
+ggplot(df) +
+  geom_histogram(aes(x = varianzas_bootstrap, y = ..density..),
+                 bins = 10, fill = 'olivedrab4', col = 'black') +
+  geom_vline(xintercept = varianza_original, size = 1.1)
+
+print(sd(varianzas_bootstrap))
+```
+
+(b) Sabiendo que los datos provienen de una normal el error típico se daría como:
+
+```{r}
+sqrt(2*varianza_original^2 / (n-1))
+```
+
+Podemos ver que la diferencia es bastante grande, lo que nos podría indicar que realmente la muestra no viene de una normal sino de otra distribución diferente.
+
+(c) Aquí definimos los intervalos de confianza spara $\hat\sigma$ con 100 remuestreos bootstrap de 10 muestras sobre la muestra anterior.
+
+```{r}
+alfa <- 0.05
+m <- 100
+R <- 10
+
+media_original = mean(muestra_original)
+
+acierto <- NULL
+intervalo <- NULL
+for (i in 1:m){
+  muestras_bootstrap <- sample(muestra_original, n*R, rep = TRUE)
+  muestras_bootstrap <- matrix(muestras_bootstrap, nrow = n)
+  varianzas_bootstrap <- apply(muestras_bootstrap, 2, var)
+  ic_min <- 2*varianza_original - quantile(varianzas_bootstrap, 1-alfa/2)
+  ic_max <- 2*varianza_original - quantile(varianzas_bootstrap, alfa/2)
+  intervalo <- rbind(intervalo, c(ic_min, ic_max))
+  acierto <- c(acierto, ic_min < varianza_original & ic_max > varianza_original)
+}
+
+df <- data.frame(ic_min <- intervalo[,1],
+                 ic_max <- intervalo[, 2],
+                 ind = 1:m,
+                 acierto = acierto)
+ggplot(df) +
+  geom_linerange(aes(xmin = ic_min, xmax = ic_max, y = ind, col = acierto)) +
+  scale_color_hue(labels = c("NO", "SÍ")) +
+  geom_vline(aes(xintercept = varianza_original), linetype = 2) +
+  theme_bw() +
+  labs(y = 'Muestras', x = 'Intervalos (nivel 0.95)',
+       title = 'IC (método bootstrap híbrido)')
+```
