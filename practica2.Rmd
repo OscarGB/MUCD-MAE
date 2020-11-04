@@ -1,13 +1,14 @@
 ---
-title: "practica2"
+title: "Práctica 2. Estimación de la función de densidad"
 author: "Óscar Gómez Borzdynski"
-date: "1/11/2020"
+date: "5/11/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library("ggpubr")
 ```
 
 ## Ejercicio 1
@@ -45,7 +46,9 @@ ggplot() +
   geom_density(aes(x = ingresos), kernel = 'gaussian', bw=3, color='green') +
   geom_density(aes(x = ingresos), kernel = 'gaussian', bw=1, color='orange') +
   geom_density(aes(x = ingresos), kernel = 'gaussian', bw=0.1, color='black') +
-  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=0.01, color='red')
+  geom_density(aes(x = ingresos), kernel = 'gaussian', bw=0.01, color='red') +
+  xlab("Ingresos") +
+  ylab("Densidad")
 
 ```
 
@@ -53,9 +56,95 @@ Podemos ver cómo el cambio de núcleo apenas modifica el resultado final del es
 
 Por otro lado, el conjunto de datos estudiado es bimodal. Con las desviaciones típicas por defecto (o manualmente = 0.1) podemos comprobar que nuestro estimador cumple esta condición. Con desviaciones típicas demasiado grandes esta propiedad se pierde, siendo unimodal. En el caso de un valor demasiado bajo las gran varianza hace que sea multimodal.
 
+## Ejercicio 3
+
+Los datos del fichero lipidos.txt corresponden a la concentración de colesterol y triglicéridos(mg/dl) en pacientes evaluados por tener un dolor en el pecho. De estos pacientes, 51 no presentaron evidencia de enfermedad cardiaca mientras que 320 sí la presentaron.
+
+(a) Representa un estimador del núcleo de la densidad para la variable correspondiente a la concentración de triglicéridos (utiliza primero todos los datos y después trata por separado a los individuos sanos y enfermos). Experimenta utilizando distintos núcleos y distintos valores del parámetro de suavizado. Comenta el resultado.
+
+(b) Representa un estimador del núcleo bidimensional para el vector de variables correspondiente a las concentraciones de triglicéridos y colesterol, tratando por separado los
+datos de los individuos enfermos y los sanos. Comenta el resultado.
+
+### Solución
+
+#### a
+
+En primer lugar se prueban dos núcleos: Gaussiano y de Epanechnikov con distintos parámetros de suavizado (100, auto, 10 y 1). Se dibujan en orden decreciente situándose el núcleo Gaussiano a la izquierda y el de Epanechnikov a la derecha.
+
+```{r}
+lipidos <- read.table('lipidos.txt', header=TRUE)
+```
+```{r, echo=FALSE}
+
+g0 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'gaussian', bw=100, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+g1 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'gaussian', color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+g2 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'gaussian', bw=10, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+g3 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'gaussian', bw=1, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+e0 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'epanechnikov', bw=100, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+e1 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'epanechnikov', color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+e2 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'epanechnikov', bw=10, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+e3 <- ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos), kernel = 'epanechnikov', bw=1, color="darkblue", fill="lightblue") +
+  xlab("Triglicéridos") +
+  ylab("Densidad")
+ggarrange(g0,e0,g1,e1,g2,e2,g3,e3, ncol=2,nrow=4)
+```
+
+Podemos comprobar que la diferencia entre ambos núcleos es apreciable aunque quizás no demasiado significativa. Así mismo, se aprecia el mismo fenómeno que en el apartado anterior, donde un parámetro de suavizado demasiado alto podemos perder información relevante mientras que con uno demasiado bajo experimentamos demasiada variación. 
+
+Dado que vemos que la elección del núcleo no presenta demasiada variación en este problema, realizaremos la comparativa entre sanos y enfermos con el núcleo Gaussiano y el parámetro de suavizado por defecto.
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_density(aes(x = lipidos$Trigliceridos, fill=lipidos$Enfermo), kernel = 'gaussian', alpha=0.2) +
+  xlab("Triglicéridos") +
+  ylab("Densidad") + 
+  labs(fill = "Enfermo")
+```
+
+Podemos ver que los enfermos tienen tendencia a presentar valor de triglicéridos más bajos que los sanos, lo que nos quiere indicar que un nivel bajo de triglicéridos puede ser síntoma o causa de alguna enfermedad.
+
+#### b
+
+Dibujamos en una misma gráfica la función de densidad bidimensional como mapa de curvas de nivel.
+
+```{r, echo=FALSE, warning=FALSE}
+ggplot() + 
+  geom_density_2d(aes(x = lipidos$Trigliceridos, y=lipidos$Colesterol, color=lipidos$Enfermo)) + 
+  geom_point(aes(x = lipidos$Trigliceridos, y=lipidos$Colesterol, color=lipidos$Enfermo), alpha=0.3)+
+  xlim(c(0,330)) +
+  ylim(c(90,330)) +
+  xlab("Triglicéridos") +
+  ylab("Colesterol")
+
+```
+
+Podemos comprobar que la mayor densidad de personas enfermas se sitúa en valores menores de Triglicéridos y Colesterol. Con esta información podemos intuir que ambas cantidades pueden ser indicadores de enfermedad.
+
 ## Ejercicio 7
 
-Sea $F_n$ la función de distribución empírica correspondiente a una muestra $X_1,\dots,X_n$ y sea $X_1^*,\dots,X_n^*$ una remuestra extraída de $F_n$. Se calcula un estimador del núcleo $\hat{f}^*_h(x)$ a partir de $X_1^*,\dots,X_n^*$ y otro $\hat{f}_h(x) a partir de $X_1,\dots,X_n$. Demuestra que
+Sea $F_n$ la función de distribución empírica correspondiente a una muestra $X_1,\dots,X_n$ y sea $X_1^*,\dots,X_n^*$ una remuestra extraída de $F_n$. Se calcula un estimador del núcleo $\hat{f}^*_h(x)$ a partir de $X_1^*,\dots,X_n^*$ y otro $\hat{f}_h(x)$ a partir de $X_1,\dots,X_n$. Demuestra que
 $$
 E_{F_n}\left[ \hat{f}^*_h(x) - \hat{f}_h(x) \right] = 0
 $$
