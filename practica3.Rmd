@@ -1,0 +1,53 @@
+---
+title: "Práctica 3. Regresión no paramétrica"
+author: "Óscar Gómez Borzdynski"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library("ggpubr")
+library(KernSmooth)
+```
+
+## Ejercicio 1
+
+Los datos del fichero Datos-geyser.txt corresponden al día de la observación (primera columna), el tiempo medido en minutos (segunda columna $Y$ ) y el tiempo hasta la siguiente erupción (tercera columna $X$) del geyser Old Faithful en el parque norteamericano de Yellowstone.
+
+### Apartado A
+
+Representa gráficamente los datos, junto con el estimador de Nadaraya-Watson de la función de regresión de $Y$ sobre $X$.
+
+### Solución
+
+```{r}
+geyser <- read.table('Datos-geyser.txt', header = TRUE)
+
+df <- data.frame(y=geyser$Y, x=geyser$X)
+ggplot(df, aes(x, y)) + 
+  geom_point() +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=0), color="blue") +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=1), color="red") +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=2), color="green")
+
+```
+
+### Apartado B
+
+Representa gráficamente los datos, junto con el estimador localmente lineal de la función de regresión de $Y$ sobre $X$.
+
+### Solución
+
+```{r}
+geyser <- read.table('Datos-geyser.txt', header = TRUE)
+
+df <- data.frame(y=geyser$Y, x=geyser$X)
+
+ajuste <- with(df, locpoly(x, y, degree = 1, bandwidth = 0.25, gridsize = nrow(df)))
+
+plot(df$x, df$y)
+fit <- locpoly(df$x, df$y, bandwidth = 0.25)
+lines(fit)
+```
