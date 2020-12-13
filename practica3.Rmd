@@ -8,9 +8,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library("ggpubr")
+library(ggpubr)
 library(KernSmooth)
+library(leaps)
+library(glmnet)
+library(MASS)
 ```
+
+# Primera parte
 
 ## Ejercicio 1
 
@@ -107,14 +112,297 @@ Para la hipótesis $H_0:\beta_1 = \beta_2 =0$ compararemos el modelo completo co
 
 En este caso vemos que el contraste da un valor muy inferior a $\alpha = 0.05$ y por tanto podemos descartar la hipótesis y considerar las variables $X_1$ y $x_2$ como significativas para el modelo.
 
+## Ejercicio 5
+
+Tres vehículos se encuentran situados en los puntos $0 < \beta_1 < \beta_2 < \beta_3$ de una carretera recta. Para estimar la posición de los vehículos se toman las siguientes medidas (todas ellas sujetas a errores aleatorios de medición independientes con distribución normal de media $0$ y varianza $σ^2$):
+
+* Desde el punto $0$ medimos las distancias a los tres vehículos dando $Y1$, $Y2$ e $Y3$.
+* Nos trasladamos al primer vehículo y medimos las distancias a los otros dos, dando dos nuevas medidas $Y4$ e $Y5$.
+* Nos trasladamos al segundo vehículo y medimos la distancia al tercero, dando una medida adicional $Y6$.
+
+### Apartado A
+
+Expresa el problema de estimación como un modelo de regresión múltiple indicando cláramente cuál es la matriz de diseño.
+
+### Solución
+
+### Apartado B
+
+Calcula la distribución del estimador de mínimos cuadrados del vector de posiciones $(\beta_1, \beta_2, \beta_3)'$.
+
+### Solución
+
+## Ejercicio 8
+
+El conjunto de datos star.txt corresponde a la temperatura y la intensidad de la luz en un conjunto de estrellas.
+
+### Apartado A
+
+Calcula la recta de mínimos cuadrados. Representa gráficamente la nube de puntos junto con la recta obtenida. Comenta el resultado.
+
+### Solución
+
+```{r}
+star <- read.table('star.txt', header = TRUE)
+ggplot(star, aes(Temp, Intens)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+Podemos ver que los 4 puntos situados en la esquina superior izquierda desvían la recta de mínimos cuadrados haciendo que genere mucho más error en el resto de puntos del conjunto de datos.
+
+### Apartado B
+
+En lugar de mínimos cuadrados, otro criterio posible para ajustar una regresión es encontrar la recta que minimiza la mediana de los residuos al cuadrado. Esta recta se calcula con el comando MASS::lmsreg de R. Calcula la recta de mínima mediana de cuadrados para los datos de las estrellas. Representa gráficamente la nube de puntos junto con la recta obtenida.
+
+### Solución
+
+```{r}
+star <- read.table('star.txt', header = TRUE)
+ggplot(star, aes(Temp, Intens)) +
+  geom_point() +
+  geom_smooth(method = function(formula, data, weights=weights) lmsreg(formula, data), se=FALSE)
+```
+
+En este caso vemos que la recta ajusta mejor el groso de los datos, pese a que genera mayor error en los puntos de la esquina superior izquierda. Podríamos considerar este tipo de regresión algo más robusta a outliers.
+
+### Apartado C
+
+Usa el método bootstrap para calcular el error típico de la pendiente de la recta de mínima mediana de cuadrados para los datos de las estrellas. ¿Qué problema presenta el método bootstrap para este conjunto de datos concreto?
+
+### Solución
+
+```{r}
+R <- 1000
+beta1_boot <- NULL
+for (i in 1:R){
+  X = sample(star$Temp, 47, rep=TRUE)
+  Y = sample(star$Intens, 47, rep=TRUE)
+  beta1_boot[i] <- coefficients(lmsreg(Y ~ X))[2]
+}
+sd(beta1_boot)
+```
+
+Vemos que la pendiente es bastante variable según los puntos que escogemos. Esto puede deberse a que, dado que son pocos puntos (sólo 47), al hacer boostrap eliminamos algunos elementos que pueden aportar algo de información.
+
+# Segunda parte
+
+## Selección de variables con datos simulados
+
+### Apartado A
+
+Genera aleatoriamente una variable regresora $X$ y un vector aleatorio $\epsilon$ de longitud $n=100$, con distribución normal estándar e independientes.
+
+### Solución
+
+```{r}
+X <- rnorm(100)
+eps <- rnorm(100)
+```
+
+### Apartado B
+
+Genera la variable respuesta de acuerdo con el modelo:
+$$ Y = X + X^2 + X^3 + \epsilon $$
+donde $\epsilon$ es una variable normal de media 0 y la varianza que tú elijas.
+
+### Solución
+
+```{r}
+Y <- X + X^2 + X^3 + eps
+```
+
+### Apartado C
+
+Selecciona el modelo óptimo entre todos los submodelos que contienen como variables regresoras $X,X^2,X^3,\dots,X^{10}$. ¿Cuál es el mejor modelo de acuerdo con los criterios $C_p$, BIC y $R^2_a$?
+
+### Solución
+
+```{r}
+datos <- data.frame(y=Y, x1=X, x2=X^2, x3=X^3, x4=X^4, x5=X^5, x6=X^6, x7=X^7, x8=X^8, x9=X^9, x10=X^10)
+modelos <- regsubsets(y~., data=datos)
+resumen <- summary(modelos)
+plot(resumen$cp, xlab ="Número de variables", ylab="CP", type="l")
+plot(resumen$bic, xlab ="Número de variables", ylab="BIC", type="l")
+plot(resumen$adjr2, xlab ="Número de variables", ylab="R2 ajustado", type="l")
+resumen
+```
+
+Podemos ver un cambio muy importante de tendencia en todas las gráficas de los criterios a partir 3 variables regresoras. En el resumen, además, comprobamos que las variables utilizadas para este modelo son $X$, $X^2$ y $X^3$, que son las utilizadas para definir $Y$.
+
+### Apartado D
+
+Repite el apartado anterior usando el método iterativo hacia adelante.
+
+### Solución
+
+```{r}
+modelos <- regsubsets(y~., data=datos, method="forward")
+resumen <- summary(modelos)
+plot(resumen$cp, xlab ="Número de variables", ylab="CP", type="l")
+plot(resumen$bic, xlab ="Número de variables", ylab="BIC", type="l")
+plot(resumen$adjr2, xlab ="Número de variables", ylab="R2 ajustado", type="l")
+resumen
+```
+
+Vemos que en este caso, los resultados son esencialmente los mismos. El modelo que mejor ajusta los datos corresponde con el formado por las variables regresoras $X$, $X^2$ y $X^3$.
+
+### Apartado E
+
+Aplica ahora lasso al modelo que incluye las variables regresoras $X, X^2,\dots,X^{10}$. Selecciona el parámetro de regularización mediante validación cruzada y compara los resultados del ajuste con los de los apartados anteriores.
+
+### Solución
+
+```{r}
+x <- as.matrix(datos[,-1])
+y <- datos[,1]
+modelo_lasso <- glmnet(x, y, alpha = 1)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+```
+
+Vemos que lasso elimina las variables innecesarias con valores de lambda bastante bajos, para buscar el óptimo utilizamos validación cruzada.
+
+```{r}
+lasso_cv <- cv.glmnet (x, y, alpha = 1)
+plot(lasso_cv)
+indice <- which(min(lasso_cv$cvm) == lasso_cv$cvm)
+abline(h = lasso_cv$cvm[indice] + lasso_cv$cvsd[indice], lty = 2)
+lambda.lasso = lasso_cv$lambda.1se
+```
+
+Vemos que el lambda óptimo es `r lambda.lasso`, asi que vamos a representar lasso con ese lambda concreto.
+
+```{r}
+modelo_final_lasso <- glmnet(x, y, alpha = 1, lambda = lambda.lasso)
+coef(modelo_final_lasso)
+```
+
+Vemos que el modelo con dicho lambda solo tiene en cuenta las variables $X$, $X^2$ y $X^3$.
 
 
+### Apartado F
 
+Genera ahora las respuestas a partir del modelo
 
+$$Y=X^7 + \epsilon $$
+y aplica de nuevo el método lasso.
 
+### Solución
 
+```{r}
+Y <- X^7 + eps
+datos <- data.frame(y=Y, x1=X, x2=X^2, x3=X^3, x4=X^4, x5=X^5, x6=X^6, x7=X^7, x8=X^8, x9=X^9, x10=X^10)
+x <- as.matrix(datos[,-1])
+y <- datos[,1]
+modelo_lasso <- glmnet(x, y, alpha = 1)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+```
 
+Dado que nuestra variable 7 es correspondiencia directa con uno de las variables de regresión, la aplicación de la técnica lasso no es significativa. De todas formas, podemos ver que para cualquier lambda el modelo solo asigna coeficiente a la variable $X^7$.
 
+```{r}
+modelo_final_lasso <- glmnet(x, y, alpha = 1, lambda = 20)
+coef(modelo_final_lasso)
+```
 
+## Datos de consumo de combustible en EE.UU.
 
+Los datos fuel2001 en el fichero combustible.RData corresponden al consumo de combustible (y otras variables relacionadas) en EE.UU. El siguiente código permite importar los datos a R:
 
+```{r}
+datos <- 'http://verso.mat.uam.es/~joser.berrendero/datos/combustible.RData'
+load(url(datos))
+head(fuel2001)
+```
+
+Se desea explicar la variable FuelC en función del resto de la información.
+
+### Apartado A
+
+Representa en un plano las dos primeras componentes principales de estos datos estandarizados (consulta la ayuda de `prcomp`). ¿Son suficientes estas dos componentes para explicar un alto porcentaje de la varianza?
+
+### Solución
+
+```{r}
+prcomp_fuel <- prcomp(fuel2001, center=TRUE, scale=TRUE)
+pca_fuel <- data.frame(
+  PC1 = prcomp_fuel$x[,1],
+  PC2 = prcomp_fuel$x[,2]
+)
+
+ggplot(pca_fuel, aes(x = PC1, y = PC2)) +
+  geom_point()
+
+sdev <- data.frame(indice = 1:7,
+                   sdev = round(prcomp_fuel$sdev, 3))
+
+ggplot(sdev, aes(x = indice, y = sdev)) +
+  geom_line() +
+  geom_point()
+```
+
+Vemos que con los autovalores de las dos primeras componentes principales están por encima de 1. El autovalor de la tercera componente es 1 y está muy cercano al de la segunda, por ello creo que utilizar sólo las dos primera componentes no explicará la gran parte de la varianza.
+
+### Apartado B
+
+Ajusta el modelo completo con todas las variables. En este modelo completo, contrasta la hipótesis nula de que los coeficientes de las variables `Income`, `MPC` y `Tax` son simultáneamente iguales a cero.
+
+### Solución
+
+```{r}
+modelo <- lm(FuelC ~ ., data=fuel2001)
+modelo0 <- lm(FuelC ~ Drivers + Miles + Pop, data=fuel2001)
+anova(modelo0, modelo)
+```
+
+Con el contraste anova entre el modelo completo y el reducido, que no utiliza las variables `Income`, `MPC` y `Tax`, podemos ver que el p-valor superior a un $\alpha = 0.05$, por lo que no podemos rechazar el modelo reducido a favor del modelo completo. Con esto, no podemos decir que los coeficientes de las variables `Income`, `MPC` y `Tax` tomen valores distintos de 0.
+
+### Apartado C
+
+De acuerdo con el método iterativo hacia adelante y el criterio BIC, ¿cuál es el modelo óptimo?
+
+### Solución
+
+```{r}
+modelos <- regsubsets(FuelC~., data=fuel2001, method="forward")
+resumen <- summary(modelos)
+plot(resumen$bic, xlab ="Número de variables", ylab="BIC", type="l")
+resumen
+```
+
+Vemos que el número de variables óptimo es 3 y siguiendo el método iterativo hacia delante se han seleccionado `Drivers`, `Miles` y `Tax`.
+
+### Apartado D
+
+Ajusta el modelo usando lasso, con el parámetro de regularización seleccionado mediante validación cruzada.
+
+### Solución
+
+```{r}
+x <- as.matrix(fuel2001[,-2])
+y <- fuel2001[,2]
+lasso_cv <- cv.glmnet (x, y, alpha = 1)
+lambda.lasso = lasso_cv$lambda.1se
+modelo_final_lasso <- glmnet(x, y, alpha = 1, lambda = lambda.lasso)
+coef(modelo_final_lasso)
+```
+
+Vemos que mediante validación cruzada para lasso, el modelo seleccionado coloca las variables `Drivers` y `Miles`. 
+
+### Apartado E
+
+Ajusta el modelo usando ridge, con el parámetro de regularización seleccionado mediante validación cruzada.
+
+### Solución
+
+```{r}
+ridge_cv <- cv.glmnet (x, y, alpha = 0)
+plot(ridge_cv)
+indice <- which(min(ridge_cv$cvm) == ridge_cv$cvm)
+abline(h = ridge_cv$cvm[indice] + ridge_cv$cvsd[indice], lty = 2)
+lambda.ridge = ridge_cv$lambda.1se
+modelo_final_ridge <- glmnet(x, y, alpha = 0, lambda = lambda.ridge)
+coef(modelo_final_ridge)
+```
+
+En este caso parece que el modelo usando ridge no selecciona las mismas variables. De echo le asigna valores a todos los coeficientes. En la gráfica donde podemos ver el error en función del valor de $\lambda$, vemos que es creciente. Por ello deberemos tomar un valor de $\lambda$ pequeño, siendo el óptimo `r lambda.ridge`
