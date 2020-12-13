@@ -126,11 +126,58 @@ Expresa el problema de estimación como un modelo de regresión múltiple indica
 
 ### Solución
 
+$$\begin{pmatrix}
+Y_1\\
+Y_2\\
+Y_3\\
+Y_4\\
+Y_5\\
+Y_6
+\end{pmatrix}
+= 
+\begin{pmatrix}
+1 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1\\
+-1 & 1 & 0\\
+-1 & 0 & 1\\
+0 & -1 & 1
+\end{pmatrix}
+\begin{pmatrix}
+\beta_1\\
+\beta_2\\
+\beta_3
+\end{pmatrix}
++
+\begin{pmatrix}
+\epsilon_1\\
+\epsilon_2\\
+\epsilon_3\\
+\epsilon_4\\
+\epsilon_5\\
+\epsilon_6
+\end{pmatrix}$$
+
 ### Apartado B
 
 Calcula la distribución del estimador de mínimos cuadrados del vector de posiciones $(\beta_1, \beta_2, \beta_3)'$.
 
 ### Solución
+
+$$\hat\beta = (X'X)^{-1}X'Y = 
+\begin{pmatrix}
+0.50& 0.25& 0.25& -0.25& -0.25&  0.00\\
+0.25& 0.50& 0.25&  0.25&  0.00& -0.25\\
+0.25& 0.25& 0.50&  0.00&  0.25&  0.25
+\end{pmatrix}
+\begin{pmatrix}
+Y_1\\
+Y_2\\
+Y_3\\
+Y_4\\
+Y_5\\
+Y_6
+\end{pmatrix}$$
 
 ## Ejercicio 8
 
