@@ -1,0 +1,120 @@
+---
+title: "Práctica 3. Regresión no paramétrica"
+author: "Óscar Gómez Borzdynski"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library("ggpubr")
+library(KernSmooth)
+```
+
+## Ejercicio 1
+
+Los datos del fichero Datos-geyser.txt corresponden al día de la observación (primera columna), el tiempo medido en minutos (segunda columna $Y$ ) y el tiempo hasta la siguiente erupción (tercera columna $X$) del geyser Old Faithful en el parque norteamericano de Yellowstone.
+
+### Apartado A
+
+Representa gráficamente los datos, junto con el estimador de Nadaraya-Watson de la función de regresión de $Y$ sobre $X$.
+
+### Solución
+
+```{r}
+geyser <- read.table('Datos-geyser.txt', header = TRUE)
+
+df <- data.frame(y=geyser$Y, x=geyser$X)
+ggplot(df, aes(x, y)) + 
+  geom_point() +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=0), color="blue") +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=1), color="red") +
+  geom_smooth(method = 'loess', se = FALSE, span = 0.25, method.args = list(degree=2), color="green")
+
+```
+
+### Apartado B
+
+Representa gráficamente los datos, junto con el estimador localmente lineal de la función de regresión de $Y$ sobre $X$.
+
+### Solución
+
+```{r}
+geyser <- read.table('Datos-geyser.txt', header = TRUE)
+
+df <- data.frame(y=geyser$Y, x=geyser$X)
+
+ajuste <- with(df, locpoly(x, y, degree = 1, bandwidth = 0.25, gridsize = nrow(df)))
+
+plot(df$x, df$y)
+fit <- locpoly(df$x, df$y, bandwidth = 0.25)
+lines(fit)
+```
+
+## Ejercicio 4
+
+Se considera el siguiente modelo de regresión lineal múltiple:
+
+$$Y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \beta_3 x_{3i} + \epsilon_i,\quad \epsilon_i 	\equiv \mathcal N (0, \sigma^2),\quad i= 1,\dots, n$$
+
+Se dispone de $n = 20$ observaciones con las que se ajustan todos los posibles submodelos del modelo (1), obteniéndose para cada uno de ellos las siguientes sumas de cuadrados de los errores (todos los submodelos incluyen un término independiente).
+
+### Apartado A
+
+Calcula la tabla de análisis de la varianza para el modelo (1) y contrasta a nivel $\alpha = 0,05$ la hipótesis nula $H_0 : \beta_1 = \beta_2 = \beta_3 = 0$.
+
+### Solución
+
+En este ejercicio he tenido un problema con la notación ya que en la tabla aparece SCE como suma de los errores al cuadrado en vez de como la suma de cuadrados explicada tratada en los apuntes. Por tanto voy a tomar el SCE de la tabla como el SCR de los apuntes (Suma de residuos al cuadrado). 
+
+Para contrastar la hipótesis voy a comparar el modelo correspondiente con un modelo reducido.
+
+Comenzamos con la hipótesis donde ninguna de las variables del modelo es significativa para la regresión, para ello comparamos el modelo completo con el modelo reducido $M_0 = \beta_0$.
+
+| Res.Df | RSS   | Df | Sum of Sq | F       | Pr(>F)  |
+|--------|-------|----|-----------|---------|---------|
+| 19     | 42644 | NA | NA        | NA      | NA      |
+| 16     |761.41 | 3  |41.882,59  | 293,369 | 3.4e-14 |
+
+Podemos ver que la probabilidad es mucho menor que $0.05$. Por tanto podemos decartar la hipótesis $H_0$ y pudiendo llegar a la conclusión de que como poco una de las variables $x_1$, $x_2$ y $x_3$ es significativa.
+
+### Apartado B
+
+En el modelo (1), contrasta a nivel $\alpha = 0,05$ las dos hipótesis nulas siguientes:
+
+* $H_0:\beta_2=0$
+* $H_0:\beta_1 = \beta_3 =0$
+
+### Solución
+
+Para comprobar la primera hipótesis, vamos a comparar el modelo completo con el modelo reducido $M_0 = \beta_0 + \beta_1 x_{1i} + \beta_3 x_{3i}$
+
+| Res.Df | RSS   | Df | Sum of Sq | F       | Pr(>F)  |
+|--------|-------|----|-----------|---------|---------|
+| 17     | 762.55| NA | NA        | NA      | NA      |
+| 16     |761.41 | 1  | 1.14      | 0.0239  | 0.12    |
+
+Como el valor de F es demasiado cercano a 0 y por tanto la probabilidad es superior a $\alpha = 0.05$, por tanto podemos deducir que la variable $x_2$ no es significativa en el ajuste.
+
+Para la hipótesis $H_0:\beta_1 = \beta_2 =0$ compararemos el modelo completo con el modelo reducido $M_0 = \beta_0 + \beta_2 x_{2i}$
+
+
+| Res.Df | RSS     | Df | Sum of Sq | F       | Pr(>F)  |
+|--------|---------|----|-----------|---------|---------|
+| 18     | 36253.69| NA | NA        | NA      | NA      |
+| 16     |761.41   | 2  | 35492.28  | 0.0239  | 3.8e-14 |
+
+En este caso vemos que el contraste da un valor muy inferior a $\alpha = 0.05$ y por tanto podemos descartar la hipótesis y considerar las variables $X_1$ y $x_2$ como significativas para el modelo.
+
+
+
+
+
+
+
+
+
+
+
+
