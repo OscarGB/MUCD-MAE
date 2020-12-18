@@ -1,0 +1,63 @@
+---
+title: "Práctica 4: Clasificación supervisada"
+author: "Óscar Gómez Borzdynski"
+date: "18/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Ejercicio 5
+En un grupo de 435 pacientes que habían sufrido quemaduras de tercer grado se midió el área de la zona afectada por las quemaduras [la variable $x$ corresponde a $\log(área + 1)$]. Algunos de los pacientes sobrevivieron ($y=1$) y otros fallecieron ($y=0$). Con el fin de estudiar cómo influye el área de las quemaduras en la probabilidad de supervivencia se ajustó un modelo de regresión logística a los datos con los resultados siguientes:
+
+## Apartado A
+
+¿Aportan estos datos evidencia (a nivel $\alpha = 0.01$) de que cuanto mayor es el área afectada menor es la probabilidad de que el individuo sobreviva?
+
+### Solución
+
+Sí. La variable $x$ tiene un p-valor menor a $\alpha$ tomando coeficiente negativo, por lo que cuanto mayor el valor de $x$ menor será $y$, lo que indica una menor probabilidad de sobrevivir.
+
+## Apartado B
+
+Calcula un intervalo de confianza con nivel aproximado del $95 \%$ para el parámetro $\beta_1$, donde $\beta_1$ es el coeficiente correspondiente a la variable $x$.
+
+### Solución
+
+Para calcular el intervalo de confianza vamos a utilizar la fórmula de Wald:
+
+$$
+\beta_1 \in \hat\beta_1 \pm Z_{\frac{\alpha}{2}}SE(\hat\beta_1) = -10.662 \pm 1.96*1.083 = [-12.78468, -8.53932]
+$$
+
+## Apartado C
+
+Determina una regla de clasificación para predecir si un individuo sobrevivirá o no en función del valor de la variable $x$. ¿Cuál sería la predicción si $x$ vale $2.5$?
+
+### Solución
+
+En la salida de R vemos que los coeficientes son: $\beta_0 = 22.708$ y $\beta_1 = -10.662$.
+
+Definimos $\eta(x) = \frac{1}{1+e^{\beta_0 + \beta_1x}}$ y la regla
+
+$$g^*(x) = \left\{ 0 \text{ si } \eta(x) \leq 0.5 \atop 
+                   1 \text{ si } \eta(x) > 0.5\right. = 
+           \left\{ 0 \text{ si } \beta_0 + \beta_1x \geq 0 \atop
+                   1 \text{ si } \beta_0 + \beta_1x < 0\right. = 
+           \left\{ 0 \text{ si } x \leq 2.1298 \atop
+                   1 \text{ si } x > 2.1298\right.       
+$$
+                   
+Por tanto, si $x = 2.5$, la predicción será $y=1$
+
+# Ejercicio 6
+
+
+
+# Ejercicio 9
+
+# Ejercicio 10
+
